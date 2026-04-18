@@ -1,11 +1,27 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import PageHero from "@/components/PageHero";
 import RequestCard from "@/components/RequestCard";
-import { useStore } from "@/lib/useStore";
+import api from "@/lib/api";
+import type { Request } from "@/lib/store";
 
 export default function Home() {
-  const { store } = useStore();
-  const featured = store.requests.slice(0, 3);
+  const [featured, setFeatured] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await api.get("/requests");
+        setFeatured(data.slice(0, 3));
+      } catch (error) {
+        console.error("Failed to fetch featured requests", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   return (
     <>
@@ -46,7 +62,7 @@ export default function Home() {
           <p className="eyebrow-light mb-5">Live product feel</p>
           <h2 className="font-display text-3xl md:text-4xl leading-tight mb-4">More than a form. More like an ecosystem.</h2>
           <p className="text-primary-foreground/70 text-sm mb-8">
-            A polished multi-page experience inspired by product platforms, with AI summaries, trust scores, contribution signals, notifications, and leaderboard momentum built directly in HTML, CSS, JavaScript, and LocalStorage.
+            A polished multi-page experience inspired by product platforms, with AI summaries, trust scores, contribution signals, notifications, and leaderboard momentum built with Node.js, Express, MongoDB, and React.
           </p>
           <div className="space-y-3">
             {[
@@ -90,8 +106,9 @@ export default function Home() {
           <Link to="/explore" className="px-5 py-2.5 rounded-full bg-background border border-border text-sm font-medium hover:bg-accent">View full feed</Link>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
+          {loading && <p className="text-muted-foreground">Loading featured requests...</p>}
           {featured.map((r) => (
-            <RequestCard key={r.id} request={r} author={store.users.find((u) => u.id === r.authorId)} />
+            <RequestCard key={r._id} request={r} author={r.createdBy as any} />
           ))}
         </div>
       </section>

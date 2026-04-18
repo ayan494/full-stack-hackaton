@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { StoreProvider } from "@/lib/useStore";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
@@ -30,18 +31,24 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/explore" element={<Explore />} />
-              <Route path="/request/:id" element={<RequestDetail />} />
-              <Route path="/create" element={<CreateRequest />} />
-              <Route path="/ai-center" element={<AICenter />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/ai-center" element={<AICenter />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/request/:id" element={<RequestDetail />} />
+
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/create" element={<CreateRequest />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+              </Route>
+              
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

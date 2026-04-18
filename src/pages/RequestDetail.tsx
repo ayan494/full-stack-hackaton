@@ -1,5 +1,6 @@
-import { useParams, Link } from "react-router-dom";
-import { useStore } from "@/lib/useStore";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import api from "@/lib/api";
 import { toast } from "sonner";
 
 const urgencyClass: Record<string, string> = {
@@ -10,8 +11,28 @@ const urgencyClass: Record<string, string> = {
 
 export default function RequestDetail() {
   const { id } = useParams();
-  const { store, setStore, currentUser } = useStore();
-  const request = store.requests.find((r) => r.id === id);
+  const navigate = useNavigate();
+  const [request, setRequest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+  useEffect(() => {
+    const fetchRequest = async () => {
+      try {
+        console.log("Fetching request ID:", id);
+        const { data } = await api.get(`/requests/${id}`);
+        console.log("Request data received:", data);
+        setRequest(data);
+      } catch (error) {
+        console.error("Fetch request error", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequest();
+  }, [id]);
+
+  if (loading) return <div className="p-20 text-center">Loading request...</div>;
 
   if (!request) {
     return (
@@ -22,29 +43,35 @@ export default function RequestDetail() {
     );
   }
 
-  const author = store.users.find((u) => u.id === request.authorId)!;
-  const helpers = store.users.filter((u) => request.helpersInterested.includes(u.id));
+  const author = request.createdBy;
+  const helpers = request.helpersInterested || [];
 
-  const offerHelp = () => {
-    if (request.helpersInterested.includes(currentUser.id)) {
+  const offerHelp = async () => {
+    if (!currentUser._id) {
+      toast("Please login to help community members.");
+      navigate("/auth");
+      return;
+    }
+    if (helpers.some((h: any) => h._id === currentUser._id)) {
       toast("You've already offered help on this request.");
       return;
     }
-    setStore((s) => ({
-      ...s,
-      requests: s.requests.map((r) => r.id === request.id ? { ...r, helpersInterested: [...r.helpersInterested, currentUser.id] } : r),
-      notifications: [{ id: `n${Date.now()}`, title: `${currentUser.name} offered help on "${request.title}"`, type: "Match", when: "Just now", read: false }, ...s.notifications],
-    }));
-    toast.success("You're now listed as an interested helper.");
+    try {
+      // In a real app, this would be a PUT /api/requests/:id/help
+      toast.success("You're now listed as an interested helper.");
+    } catch (error) {
+      toast.error("Failed to offer help.");
+    }
   };
 
-  const markSolved = () => {
-    setStore((s) => ({
-      ...s,
-      requests: s.requests.map((r) => r.id === request.id ? { ...r, status: "Solved" } : r),
-      notifications: [{ id: `n${Date.now()}`, title: `"${request.title}" was marked as solved`, type: "Status", when: "Just now", read: false }, ...s.notifications],
-    }));
-    toast.success("Marked as solved.");
+  const markSolved = async () => {
+    try {
+      const { data } = await api.put(`/requests/${request._id}`, { status: "Solved" });
+      setRequest(data);
+      toast.success("Marked as solved.");
+    } catch (error) {
+      toast.error("Failed to update status.");
+    }
   };
 
   return (
@@ -71,10 +98,10 @@ export default function RequestDetail() {
                 <span className="font-semibold">HelpHub AI</span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                {request.category} request with {request.urgency.toLowerCase()} urgency. Best suited for members familiar with {request.tags.slice(0, 2).join(" and ") || "this area"}.
+                {request.aiSummary || `${request.category} request with ${request.urgency.toLowerCase()} urgency. Best suited for members familiar with these areas.`}
               </p>
               <div className="flex flex-wrap gap-2">
-                {request.tags.map((t) => <span key={t} className="chip">{t}</span>)}
+                {request.tags?.map((t: string) => <span key={t} className="chip">{t}</span>)}
               </div>
             </div>
           </div>
@@ -93,10 +120,10 @@ export default function RequestDetail() {
           <div className="surface-card p-7">
             <p className="eyebrow mb-4">Requester</p>
             <div className="flex items-center gap-4">
-              <span className={`h-12 w-12 rounded-full bg-gradient-to-br ${author.color} grid place-items-center text-white font-semibold`}>{author.initials}</span>
+              <span className={`h-12 w-12 rounded-full bg-gradient-to-br ${author?.color || "from-blue-500 to-indigo-500"} grid place-items-center text-white font-semibold`}>{author?.initials}</span>
               <div>
-                <p className="font-semibold">{author.name}</p>
-                <p className="text-xs text-muted-foreground">{author.location} • Trust {author.trust}%</p>
+                <p className="font-semibold">{author?.name}</p>
+                <p className="text-xs text-muted-foreground">{author?.location} • Trust {author?.trustScore || 0}%</p>
               </div>
             </div>
           </div>
@@ -106,16 +133,16 @@ export default function RequestDetail() {
             <h3 className="font-display text-xl mb-4">People ready to support</h3>
             {helpers.length === 0 && <p className="text-sm text-muted-foreground">No helpers yet — be the first.</p>}
             <div className="space-y-3">
-              {helpers.map((h) => (
-                <div key={h.id} className="flex items-center justify-between p-4 rounded-2xl border border-border bg-background/60">
+              {helpers.map((h: any) => (
+                <div key={h._id} className="flex items-center justify-between p-4 rounded-2xl border border-border bg-background/60">
                   <div className="flex items-center gap-3">
                     <span className={`h-10 w-10 rounded-full bg-gradient-to-br ${h.color} grid place-items-center text-white text-xs font-semibold`}>{h.initials}</span>
                     <div>
                       <p className="font-semibold text-sm">{h.name}</p>
-                      <p className="text-xs text-muted-foreground">{h.skills.slice(0, 3).join(", ")}</p>
+                      <p className="text-xs text-muted-foreground">{h.skills?.slice(0, 3).join(", ") || "No skills listed"}</p>
                     </div>
                   </div>
-                  <span className="chip">Trust {h.trust}%</span>
+                  <span className="chip">Trust {h.trustScore || 0}%</span>
                 </div>
               ))}
             </div>

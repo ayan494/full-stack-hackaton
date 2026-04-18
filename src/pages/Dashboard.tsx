@@ -1,18 +1,55 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import PageHero from "@/components/PageHero";
 import RequestCard from "@/components/RequestCard";
-import { useStore } from "@/lib/useStore";
+import api from "@/lib/api";
 
 export default function Dashboard() {
-  const { store, currentUser } = useStore();
-  const myRequests = store.requests.filter((r) => r.authorId === currentUser.id);
-  const helpingOn = store.requests.filter((r) => r.helpersInterested.includes(currentUser.id));
-  const solvedCount = store.requests.filter((r) => r.status === "Solved").length;
+  const [currentUser, setCurrentUser] = useState<any>(JSON.parse(localStorage.getItem("user") || "{}"));
+  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [helpingOn, setHelpingOn] = useState<any[]>([]);
+  const [stats, setStats] = useState({ trust: 0, contributions: 0, unsolved: 0, communitySolved: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [userRes, myReqRes, allReqRes] = await Promise.all([
+          api.get("/auth/me"),
+          api.get("/requests/me"),
+          api.get("/requests")
+        ]);
+        
+        setCurrentUser(userRes.data);
+        setMyRequests(myReqRes.data);
+        
+        // Stats calculation
+        const communitySolved = allReqRes.data.filter((r: any) => r.status === "Solved").length;
+        setStats({
+          trust: userRes.data.trustScore || 0,
+          contributions: userRes.data.contributions || 0,
+          unsolved: myReqRes.data.filter((r: any) => r.status === "Open").length,
+          communitySolved
+        });
+
+        // "Helping on" filter
+        setHelpingOn(allReqRes.data.filter((r: any) => r.helpersInterested.includes(userRes.data._id)));
+
+      } catch (error) {
+        console.error("Dashboard fetch error", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="p-20 text-center">Loading dashboard...</div>;
 
   return (
     <>
       <PageHero
-        eyebrow={`Welcome back, ${currentUser.name.split(" ")[0]}`}
+        eyebrow={`Welcome back, ${currentUser.name?.split(" ")[0] || "User"}`}
         title="Your support dashboard at a glance."
         description="Track requests you've posted, conversations you're part of, and the impact you're contributing to the community."
       >
@@ -24,10 +61,10 @@ export default function Dashboard() {
 
       <div className="grid md:grid-cols-4 gap-5 mb-10">
         {[
-          { k: "Trust score", v: `${currentUser.trust}%` },
-          { k: "Contributions", v: currentUser.contributions },
+          { k: "Trust score", v: `${stats.trust}%` },
+          { k: "Contributions", v: stats.contributions },
           { k: "My requests", v: myRequests.length },
-          { k: "Solved community-wide", v: solvedCount },
+          { k: "Solved community-wide", v: stats.communitySolved },
         ].map((s) => (
           <div key={s.k} className="surface-card p-6">
             <p className="eyebrow mb-3">{s.k}</p>
@@ -44,7 +81,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-5">
-            {myRequests.map((r) => <RequestCard key={r.id} request={r} author={currentUser} />)}
+            {myRequests.map((r) => <RequestCard key={r._id} request={r} author={currentUser} />)}
           </div>
         )}
       </section>
@@ -55,7 +92,7 @@ export default function Dashboard() {
           <div className="surface-card p-8 text-center text-muted-foreground">No active help offers yet.</div>
         ) : (
           <div className="grid md:grid-cols-2 gap-5">
-            {helpingOn.map((r) => <RequestCard key={r.id} request={r} author={store.users.find((u) => u.id === r.authorId)} />)}
+            {helpingOn.map((r) => <RequestCard key={r._id} request={r} author={r.createdBy} />)}
           </div>
         )}
       </section>

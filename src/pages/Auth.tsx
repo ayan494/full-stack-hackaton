@@ -1,20 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStore } from "@/lib/useStore";
-import type { Role } from "@/lib/store";
+import api from "@/lib/api";
+import { toast } from "sonner";
+
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Auth() {
-  const { store, setStore } = useStore();
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(store.users[0].id);
-  const [role, setRole] = useState<Role>("Both");
-  const [email, setEmail] = useState("community@helphub.ai");
-  const [pw, setPw] = useState("password");
+  const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Both");
 
-  const submit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStore((s) => ({ ...s, session: { userId, role } }));
-    navigate("/dashboard");
+    try {
+      const endpoint = isLogin ? "/auth/login" : "/auth/register";
+      const payload = isLogin ? { email, password } : { name, email, password, role };
+      
+      const { data } = await api.post(endpoint, payload);
+      
+      if (!isLogin) {
+        toast.success("Account created successfully! Please login.");
+        setIsLogin(true);
+        setPassword(""); // Clear password for security
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
+      
+      toast.success("Logged in successfully");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Authentication failed");
+    }
   };
 
   return (
@@ -24,43 +46,67 @@ export default function Auth() {
           <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl" />
           <p className="eyebrow-light mb-5">Community access</p>
           <h1 className="font-display text-4xl md:text-5xl leading-tight mb-5">Enter the support network.</h1>
-          <p className="text-primary-foreground/70 mb-8">Choose a demo identity, set your role, and jump into a multi-page product flow designed for asking, offering, and tracking help with a premium interface.</p>
+          <p className="text-primary-foreground/70 mb-8">Join a multi-page product flow designed for asking, offering, and tracking help with a premium interface.</p>
           <ul className="space-y-3 text-sm text-primary-foreground/80">
+            <li>• JWT-based secure authentication</li>
             <li>• Role-based entry for Need Help, Can Help, or Both</li>
-            <li>• Direct path into dashboard, requests, AI Center, and community feed</li>
-            <li>• Persistent demo session powered by LocalStorage</li>
+            <li>• Real-time community updates and messaging</li>
           </ul>
         </section>
 
-        <form onSubmit={submit} className="surface-card p-10 md:p-12">
-          <p className="eyebrow mb-5">Login / Signup</p>
-          <h2 className="font-display text-3xl md:text-4xl leading-tight mb-8">Authenticate your community profile</h2>
+        <form onSubmit={handleSubmit} className="surface-card p-10 md:p-12">
+          <p className="eyebrow mb-5">{isLogin ? "Login" : "Signup"}</p>
+          <h2 className="font-display text-3xl md:text-4xl leading-tight mb-8">
+            {isLogin ? "Welcome back" : "Create your profile"}
+          </h2>
           <div className="space-y-5">
-            <div>
-              <label className="text-sm font-medium block mb-2">Select demo user</label>
-              <select value={userId} onChange={(e) => setUserId(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-border bg-background">
-                {store.users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium block mb-2">Role selection</label>
-              <select value={role} onChange={(e) => setRole(e.target.value as Role)} className="w-full px-4 py-3 rounded-2xl border border-border bg-background">
-                <option>Need Help</option><option>Can Help</option><option>Both</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            {!isLogin && (
               <div>
-                <label className="text-sm font-medium block mb-2">Email</label>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-border bg-background" />
+                <label className="text-sm font-medium block mb-2">Name</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ayesha Khan" className="w-full px-4 py-3 rounded-2xl border border-border bg-background" required />
               </div>
-              <div>
-                <label className="text-sm font-medium block mb-2">Password</label>
-                <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-border bg-background" />
+            )}
+            <div>
+              <label className="text-sm font-medium block mb-2">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="w-full px-4 py-3 rounded-2xl border border-border bg-background" required />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-2">Password</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="w-full px-4 py-3 rounded-2xl border border-border bg-background pr-12" 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
+            {!isLogin && (
+              <div>
+                <label className="text-sm font-medium block mb-2">Role selection</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-border bg-background">
+                  <option>Need Help</option><option>Can Help</option><option>Both</option>
+                </select>
+              </div>
+            )}
             <button type="submit" className="w-full py-4 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary-glow transition-colors">
-              Continue to dashboard
+              {isLogin ? "Continue to dashboard" : "Create account"}
             </button>
+            <p className="text-center text-sm mt-4">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-primary font-semibold">
+                {isLogin ? "Sign up" : "Login"}
+              </button>
+            </p>
           </div>
         </form>
       </div>

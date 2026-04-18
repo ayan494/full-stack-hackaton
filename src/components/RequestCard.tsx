@@ -39,7 +39,7 @@ export default function RequestCard({ request, author }: Props) {
           <p className="font-semibold text-sm">{author?.name ?? "Member"}</p>
           <p className="text-xs text-muted-foreground">{author?.location} • {request.helpersInterested.length} helper{request.helpersInterested.length === 1 ? "" : "s"} interested</p>
         </div>
-        <Link to={`/request/${request.id}`} className="inline-flex items-center px-4 py-2 rounded-full bg-background border border-border text-sm font-medium hover:bg-accent transition-colors">
+        <Link to={`/request/${request._id}`} className="inline-flex items-center px-4 py-2 rounded-full bg-background border border-border text-sm font-medium hover:bg-accent transition-colors">
           Open details
         </Link>
       </div>

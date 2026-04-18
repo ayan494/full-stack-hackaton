@@ -4,6 +4,7 @@ import PageHero from "@/components/PageHero";
 import { useStore } from "@/lib/useStore";
 import type { Urgency } from "@/lib/store";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 function detectUrgency(text: string): Urgency {
   const t = text.toLowerCase();
@@ -50,21 +51,24 @@ export default function CreateRequest() {
     toast.success("AI suggestions applied.");
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = `r${Date.now()}`;
-    setStore((s) => ({
-      ...s,
-      requests: [{
-        id, title, description: desc || "No description provided.",
-        category, urgency, status: "Open",
-        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-        authorId: currentUser.id, helpersInterested: [], createdAt: Date.now(),
-      }, ...s.requests],
-      notifications: [{ id: `n${Date.now()}`, title: `Your request "${title}" is now live in the community feed`, type: "Request", when: "Just now", read: false }, ...s.notifications],
-    }));
-    toast.success("Request published.");
-    navigate(`/request/${id}`);
+    try {
+      const payload = {
+        title,
+        description: desc || "No description provided.",
+        category,
+        urgency,
+        tags
+      };
+      
+      const { data } = await api.post("/requests", payload);
+      
+      toast.success("Request published.");
+      navigate(`/request/${data._id}`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to publish request");
+    }
   };
 
   return (

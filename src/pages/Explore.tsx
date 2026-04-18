@@ -1,27 +1,49 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import PageHero from "@/components/PageHero";
 import RequestCard from "@/components/RequestCard";
-import { useStore } from "@/lib/useStore";
+import api from "@/lib/api";
+import type { Request, User } from "@/lib/store";
 
 export default function Explore() {
-  const { store } = useStore();
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All");
   const [urgency, setUrgency] = useState("All");
   const [skill, setSkill] = useState("");
   const [location, setLocation] = useState("");
 
-  const categories = ["All", ...Array.from(new Set(store.requests.map((r) => r.category)))];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [reqRes, usersRes] = await Promise.all([
+          api.get("/requests"),
+          api.get("/auth/me").catch(() => ({ data: null })) // Just for context if needed, or I should have a users endpoint
+        ]);
+        setRequests(reqRes.data);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const categories = ["All", ...Array.from(new Set(requests.map((r) => r.category)))];
 
   const filtered = useMemo(() => {
-    return store.requests.filter((r) => {
-      const author = store.users.find((u) => u.id === r.authorId);
+    return requests.filter((r) => {
+      // Note: In a real app, author data would ideally come with the request or be fetched separately
+      // For now, I'll rely on the populated createdBy field from backend
+      const author: any = r.createdBy;
       if (category !== "All" && r.category !== category) return false;
       if (urgency !== "All" && r.urgency !== urgency) return false;
       if (skill && !r.tags.some((t) => t.toLowerCase().includes(skill.toLowerCase()))) return false;
-      if (location && !author?.location.toLowerCase().includes(location.toLowerCase())) return false;
+      if (location && !author?.location?.toLowerCase().includes(location.toLowerCase())) return false;
       return true;
     });
-  }, [store, category, urgency, skill, location]);
+  }, [requests, category, urgency, skill, location]);
 
   return (
     <>
@@ -60,11 +82,14 @@ export default function Explore() {
         </aside>
 
         <div className="space-y-5">
-          {filtered.length === 0 && (
+          {filtered.length === 0 && !loading && (
             <div className="surface-card p-10 text-center text-muted-foreground">No requests match your filters.</div>
           )}
+          {loading && (
+            <div className="surface-card p-10 text-center text-muted-foreground">Loading community feed...</div>
+          )}
           {filtered.map((r) => (
-            <RequestCard key={r.id} request={r} author={store.users.find((u) => u.id === r.authorId)} />
+            <RequestCard key={r._id} request={r} author={r.createdBy as any} />
           ))}
         </div>
       </div>
