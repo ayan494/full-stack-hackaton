@@ -42,14 +42,15 @@
 
     --radius: 1.25rem;
 
-    --gradient-warm: radial-gradient(1200px 600px at 0% 0%, hsl(150 50% 88% / 0.6), transparent 60%),
-                     radial-gradient(1000px 500px at 100% 0%, hsl(38 80% 82% / 0.55), transparent 60%),
-                     linear-gradient(180deg, hsl(40 38% 96%), hsl(38 40% 94%));
+    --gradient-warm: radial-gradient(1200px 600px at 0% 0%, hsl(150 70% 92% / 0.8), transparent 75%),
+                     radial-gradient(1000px 500px at 100% 100%, hsl(170 65% 88% / 0.7), transparent 70%),
+                     radial-gradient(800px 400px at 50% 0%, hsl(38 85% 90% / 0.65), transparent 60%),
+                     linear-gradient(180deg, hsl(40 40% 98%), hsl(38 40% 95%));
     --gradient-ink: linear-gradient(135deg, hsl(168 35% 9%), hsl(180 30% 12%));
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
 
-    --shadow-soft: 0 10px 30px -12px hsl(165 40% 15% / 0.12);
-    --shadow-card: 0 1px 0 hsl(40 30% 100% / 0.6) inset, 0 8px 24px -16px hsl(165 40% 15% / 0.18);
+    --shadow-soft: 0 10px 40px -10px hsl(165 40% 15% / 0.08);
+    --shadow-card: 0 1px 0 hsl(40 30% 100% / 0.8) inset, 0 12px 32px -12px hsl(165 40% 15% / 0.15);
     --shadow-ink: 0 30px 80px -30px hsl(168 50% 5% / 0.45);
 
     --sidebar-background: 0 0% 98%;
@@ -105,8 +106,12 @@
 
 @layer components {
   .surface-card {
-    @apply rounded-3xl bg-card border border-border/60;
+    @apply rounded-3xl bg-card border border-border/80 transition-all duration-300;
     box-shadow: var(--shadow-card);
+  }
+  .surface-card:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 20px 40px -12px hsl(165 40% 15% / 0.2);
   }
   .surface-ink {
     background: var(--gradient-ink);
@@ -121,9 +126,12 @@
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-border bg-background/60 text-foreground;
   }
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-primary;
+    @apply text-xs font-bold uppercase tracking-[0.2em] text-primary;
   }
   .eyebrow-light {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/70;
+    @apply text-xs font-bold uppercase tracking-[0.2em] text-primary-foreground/80;
+  }
+  .glass {
+    @apply bg-white/40 backdrop-blur-xl border border-white/60 shadow-xl;
   }
 }

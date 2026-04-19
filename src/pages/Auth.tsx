@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(location.state?.isLogin ?? true);
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,6 +32,7 @@ export default function Auth() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
+      window.dispatchEvent(new Event("storage"));
       
       toast.success("Logged in successfully");
       navigate("/dashboard");
@@ -40,18 +42,23 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center p-6">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-6">
-        <section className="surface-ink p-10 md:p-14 relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl" />
-          <p className="eyebrow-light mb-5">Community access</p>
-          <h1 className="font-display text-4xl md:text-5xl leading-tight mb-5">Enter the support network.</h1>
+    <div className="min-h-screen grid place-items-center p-6 bg-background">
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-6 relative">
+        <section className="surface-ink p-10 md:p-14 relative overflow-hidden flex flex-col justify-center">
+          <Link to="/" className="absolute top-8 left-10 inline-flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors font-medium">
+            <ArrowLeft size={18} /> Back to Home
+          </Link>
+          <div className="mt-8">
+            <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
+            <p className="eyebrow-light mb-5">Community access</p>
+            <h1 className="font-display text-4xl md:text-5xl leading-tight mb-5">Enter the support network.</h1>
           <p className="text-primary-foreground/70 mb-8">Join a multi-page product flow designed for asking, offering, and tracking help with a premium interface.</p>
           <ul className="space-y-3 text-sm text-primary-foreground/80">
             <li>• JWT-based secure authentication</li>
             <li>• Role-based entry for Need Help, Can Help, or Both</li>
             <li>• Real-time community updates and messaging</li>
           </ul>
+          </div>
         </section>
 
         <form onSubmit={handleSubmit} className="surface-card p-10 md:p-12">

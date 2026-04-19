@@ -12,7 +12,9 @@ export default function Home() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const { data } = await api.get("/requests");
+        console.log("Fetching active community problems with status=Open");
+        const { data } = await api.get("/requests?status=Open");
+        console.log("Fetched active requests:", data);
         setFeatured(data.slice(0, 3));
       } catch (error) {
         console.error("Failed to fetch featured requests", error);
@@ -102,12 +104,17 @@ export default function Home() {
       <section>
         <p className="eyebrow mb-3">Featured requests</p>
         <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
-          <h2 className="font-display text-3xl md:text-5xl">Community problems currently in motion</h2>
+          <h2 className="font-display text-3xl md:text-5xl">Community Problems in Motion</h2>
           <Link to="/explore" className="px-5 py-2.5 rounded-full bg-background border border-border text-sm font-medium hover:bg-accent">View full feed</Link>
         </div>
         <div className="grid md:grid-cols-3 gap-5">
-          {loading && <p className="text-muted-foreground">Loading featured requests...</p>}
-          {featured.map((r) => (
+          {loading && <p className="text-muted-foreground col-span-3">Loading featured requests...</p>}
+          {!loading && featured.length === 0 && (
+            <div className="col-span-3 surface-card p-8 text-center text-muted-foreground w-full">
+              No active community problems right now
+            </div>
+          )}
+          {!loading && featured.map((r) => (
             <RequestCard key={r._id} request={r} author={r.createdBy as any} />
           ))}
         </div>

@@ -7,7 +7,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
 // Load env vars
-dotenv.config();
+const path = require('path');
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Connect to Database
 connectDB();
@@ -23,7 +24,7 @@ const io = new Server(server, {
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "*" }));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

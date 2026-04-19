@@ -43,19 +43,18 @@ export default function AppLayout() {
     }
   }, [isMenuOpen]);
 
-  // Show different nav items per page to mirror the reference UI
   const links = useMemo(() => {
     const path = location.pathname;
     if (path === "/") return allLinks.filter((l) => ["/", "/explore", "/leaderboard", "/ai-center"].includes(l.to));
-    if (path.startsWith("/explore") || path.startsWith("/request")) return allLinks.filter((l) => ["/dashboard", "/explore", "/leaderboard", "/notifications"].includes(l.to));
-    if (path === "/messages") return allLinks.filter((l) => ["/dashboard", "/explore", "/messages"].includes(l.to));
-    if (path === "/leaderboard") return allLinks.filter((l) => ["/dashboard", "/explore", "/leaderboard"].includes(l.to));
-    if (path === "/notifications") return allLinks.filter((l) => ["/dashboard", "/explore", "/notifications"].includes(l.to));
-    if (path === "/profile") return allLinks.filter((l) => ["/dashboard", "/onboarding", "/profile"].includes(l.to) || l.to === "/profile" || l.to === "/dashboard");
-    if (path === "/ai-center") return allLinks.filter((l) => ["/dashboard", "/create", "/ai-center"].includes(l.to));
-    if (path === "/create") return allLinks.filter((l) => ["/dashboard", "/explore", "/create"].includes(l.to));
-    if (path === "/dashboard") return allLinks.filter((l) => ["/dashboard", "/explore", "/leaderboard", "/ai-center"].includes(l.to));
-    return allLinks.slice(0, 4);
+    if (path.startsWith("/explore") || path.startsWith("/request")) return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/leaderboard", "/notifications"].includes(l.to));
+    if (path === "/messages") return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/messages"].includes(l.to));
+    if (path === "/leaderboard") return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/leaderboard"].includes(l.to));
+    if (path === "/notifications") return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/notifications"].includes(l.to));
+    if (path === "/profile") return allLinks.filter((l) => ["/", "/dashboard", "/onboarding", "/profile"].includes(l.to));
+    if (path === "/ai-center") return allLinks.filter((l) => ["/", "/dashboard", "/create", "/ai-center"].includes(l.to));
+    if (path === "/create") return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/create"].includes(l.to));
+    if (path === "/dashboard") return allLinks.filter((l) => ["/", "/dashboard", "/explore", "/leaderboard", "/ai-center"].includes(l.to));
+    return allLinks.filter((l) => ["/", "/explore", "/leaderboard", "/ai-center"].includes(l.to));
   }, [location.pathname]);
 
   const unread = 0; // Simplified for demo
@@ -65,8 +64,9 @@ export default function AppLayout() {
   if (isAuth) return <Outlet />;
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-border/50">
+    <div className="min-h-screen relative">
+      <header className="sticky top-0 md:top-4 z-50 md:mx-6 lg:mx-8 md:mb-8 transition-all duration-300">
+        <div className="bg-white/90 md:bg-white/50 backdrop-blur-2xl border-b md:border border-border/50 md:border-white/60 md:shadow-[0_8px_32px_hsl(165_40%_15%/0.08)] md:rounded-3xl">
         <div className="container px-4 sm:px-6 lg:px-8 flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
             <button
@@ -77,10 +77,10 @@ export default function AppLayout() {
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <NavLink to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary to-primary-glow grid place-items-center text-primary-foreground font-display text-lg shadow-[var(--shadow-soft)]">
+              <div className="h-10 w-10 md:h-11 md:w-11 rounded-2xl bg-gradient-to-br from-primary to-primary-glow grid place-items-center text-primary-foreground font-display text-lg shadow-[var(--shadow-soft)] group-hover:scale-105 transition-transform">
                 H
               </div>
-              <span className="font-display text-lg">HelpHub AI</span>
+              <span className="font-display text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-primary">HelpHub AI</span>
             </NavLink>
           </div>
 
@@ -91,10 +91,10 @@ export default function AppLayout() {
                 to={l.to}
                 end={l.to === "/"}
                 className={({ isActive }) =>
-                  `px-4 py-2 rounded-full text-sm transition-all ${
+                  `px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                     isActive
-                      ? "bg-accent text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-white text-foreground shadow-sm font-semibold border border-white/60"
+                      : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                   }`
                 }
               >
@@ -108,17 +108,19 @@ export default function AppLayout() {
 
           <div className="flex items-center gap-3">
             {currentUser?._id ? (
-              <NavLink to="/profile" className="flex items-center gap-2 pr-1 pl-1 py-1 rounded-full border border-border bg-card hover:bg-accent transition-colors">
-                <span className={`h-8 w-8 rounded-full bg-gradient-to-br ${currentUser.color || "from-blue-500 to-indigo-500"} grid place-items-center text-white text-xs font-semibold`}>
+              <NavLink to="/profile" className="flex items-center gap-2 pr-1.5 pl-1.5 py-1.5 rounded-full bg-white/60 border border-white/60 shadow-sm hover:bg-white transition-all group">
+                <span className={`h-8 w-8 rounded-full bg-gradient-to-br ${currentUser.color || "from-blue-500 to-indigo-500"} grid place-items-center text-white text-xs font-semibold shadow-inner group-hover:scale-105 transition-transform`}>
                   {currentUser.initials || "U"}
                 </span>
-                <span className="hidden sm:inline text-sm pr-3">{currentUser.name?.split(" ")[0] || "User"}</span>
+                <span className="hidden sm:inline text-sm font-medium pr-3">{currentUser.name?.split(" ")[0] || "User"}</span>
               </NavLink>
             ) : (
               <>
-                <span className="hidden md:inline-flex chip-outline">Live community signals</span>
-                <NavLink to="/auth" className="inline-flex items-center px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-glow transition-colors">
-                  Join the platform
+                <NavLink to="/auth" state={{ isLogin: true }} className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+                  Login
+                </NavLink>
+                <NavLink to="/auth" state={{ isLogin: false }} className="inline-flex items-center px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-glow transition-colors">
+                  Sign up
                 </NavLink>
               </>
             )}
@@ -145,7 +147,7 @@ export default function AppLayout() {
               />
               
               {/* Menu Content */}
-              <div className="relative bg-card border-b border-border p-6 shadow-xl flex flex-col gap-4">
+              <div className="relative bg-white border-b border-border p-6 shadow-2xl flex flex-col gap-4 w-full">
                 <nav className="flex flex-col gap-2">
                   {links.map((l) => (
                     <NavLink
@@ -183,18 +185,29 @@ export default function AppLayout() {
                       </div>
                     </NavLink>
                   ) : (
-                    <NavLink
-                      to="/auth"
-                      className="flex items-center justify-center w-full px-5 py-4 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary-glow transition-colors"
-                    >
-                      Join the platform
-                    </NavLink>
+                    <div className="flex flex-col gap-3 w-full">
+                      <NavLink
+                        to="/auth"
+                        state={{ isLogin: true }}
+                        className="flex items-center justify-center w-full px-5 py-3 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/80 transition-colors"
+                      >
+                        Login
+                      </NavLink>
+                      <NavLink
+                        to="/auth"
+                        state={{ isLogin: false }}
+                        className="flex items-center justify-center w-full px-5 py-4 rounded-2xl bg-primary text-primary-foreground font-medium hover:bg-primary-glow transition-colors"
+                      >
+                        Sign up
+                      </NavLink>
+                    </div>
                   )}
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </header>
 
       <main className="container px-4 sm:px-6 lg:px-8 py-10">
