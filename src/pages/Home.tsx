@@ -14,10 +14,14 @@ export default function Home() {
       try {
         console.log("Fetching active community problems with status=Open");
         const { data } = await api.get("/requests?status=Open");
-        console.log("Fetched active requests:", data);
-        setFeatured(data.slice(0, 3));
+        console.log("Home.tsx: Fetched active requests:", data);
+        if (Array.isArray(data)) {
+          setFeatured(data.slice(0, 3));
+        } else {
+          console.warn("Home.tsx: Expected array of requests but got:", data);
+        }
       } catch (error) {
-        console.error("Failed to fetch featured requests", error);
+        console.error("Home.tsx: Failed to fetch featured requests", error);
       } finally {
         setLoading(false);
       }

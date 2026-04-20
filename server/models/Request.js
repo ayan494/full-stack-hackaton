@@ -14,4 +14,10 @@ const requestSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Indexes for query performance
+requestSchema.index({ status: 1, createdAt: -1 });
+requestSchema.index({ category: 1 });
+requestSchema.index({ createdBy: 1 });
+requestSchema.index({ urgency: 1 });
+
 module.exports = mongoose.model('Request', requestSchema);

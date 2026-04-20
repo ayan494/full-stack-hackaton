@@ -25,6 +25,7 @@ export default function RequestDetail() {
         setRequest(data);
       } catch (error) {
         console.error("Fetch request error", error);
+        setRequest(null);
       } finally {
         setLoading(false);
       }
@@ -57,20 +58,22 @@ export default function RequestDetail() {
       return;
     }
     try {
-      // In a real app, this would be a PUT /api/requests/:id/help
-      toast.success("You're now listed as an interested helper.");
-    } catch (error) {
-      toast.error("Failed to offer help.");
+      const { data } = await api.post(`/requests/${request._id}/help`);
+      setRequest({ ...request, helpersInterested: [...request.helpersInterested, data.helper] });
+      toast.success("🎉 You're now listed as an interested helper!");
+      setTimeout(() => navigate("/messages"), 1500);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to offer help.");
     }
   };
 
   const markSolved = async () => {
     try {
-      const { data } = await api.put(`/requests/${request._id}`, { status: "Solved" });
-      setRequest(data);
-      toast.success("Marked as solved.");
-    } catch (error) {
-      toast.error("Failed to update status.");
+      const { data } = await api.put(`/requests/${request._id}/solve`);
+      setRequest({ ...request, status: "Solved" });
+      toast.success("🎉 Request marked as solved!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update status.");
     }
   };
 
@@ -109,8 +112,17 @@ export default function RequestDetail() {
           <div className="surface-card p-7">
             <p className="eyebrow mb-4">Actions</p>
             <div className="flex flex-wrap gap-3">
-              <button onClick={offerHelp} className="px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary-glow transition-colors">I can help</button>
-              <button onClick={markSolved} className="px-6 py-3 rounded-full bg-background border border-border font-medium hover:bg-accent transition-colors">Mark as solved</button>
+              {currentUser._id !== author?._id && (
+                <button 
+                  onClick={offerHelp} 
+                  disabled={helpers.some((h: any) => h._id === currentUser._id)}
+                  className="px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary-glow transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {helpers.some((h: any) => h._id === currentUser._id) ? "Help offered" : "I can help"}
+                </button>
+              )}
+              {currentUser._id === author?._id && request.status !== "Solved" && (
+                <button onClick={markSolved} className="px-6 py-3 rounded-full bg-background border border-border font-medium hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500/30 transition-colors">Mark as solved</button>
+              )}
               <Link to="/messages" className="px-6 py-3 rounded-full bg-background border border-border font-medium hover:bg-accent transition-colors">Message requester</Link>
             </div>
           </div>
